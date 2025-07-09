@@ -1,83 +1,61 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Typography, Button, CircularProgress, Box } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Typography, Button, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface User {
-  email: string;
+interface ProfileData {
   name: string;
   surname: string;
+  email: string;
   role: string;
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { token, logout } = useAuth();
   const { request, loading, error } = useApi();
-  const [user, setUser] = useState<User | null>(null);
+  const { logout } = useAuth();
+  const router = useRouter();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    const fetchUser = async () => {
+    const fetchProfile = async () => {
       try {
-        const data = await request<User>("get", "/v1/identity/profile");
-        setUser(data);
+        const data = await request<ProfileData>("get", "/v1/identity/profile");
+        setProfile(data);
       } catch (err) {
         console.error("Profile fetch error:", err);
       }
     };
-    fetchUser();
-  }, [token, router, request]);
+    fetchProfile();
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Typography className="auth-error">{error}</Typography>;
+  if (!profile) return <Typography>No profile data</Typography>;
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        mx: "auto",
-        mt: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Typography variant="h4" align="center" gutterBottom>
+    <div className="auth-container">
+      <Typography variant="h4" className="auth-title">
         Profile
       </Typography>
-      {loading && !user && <CircularProgress />}
-      {error && (
-        <Typography color="error" align="center" sx={{ mt: 2 }}>
-          {error.includes("500")
-            ? "Server error, please try again later."
-            : error}
-        </Typography>
-      )}
-      {user && (
-        <>
-          <Typography sx={{ mt: 2 }}>Name: {user.name}</Typography>
-          <Typography sx={{ mt: 1 }}>Surname: {user.surname}</Typography>
-          <Typography sx={{ mt: 1 }}>Email: {user.email}</Typography>
-          <Typography sx={{ mt: 1 }}>Role: {user.role}</Typography>
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-              sx={{ width: "200px", height: "48px" }}
-            >
-              Logout
-            </Button>
-          </Box>
-        </>
-      )}
-    </Box>
+      <Typography>Name: {profile.name}</Typography>
+      <Typography>Surname: {profile.surname}</Typography>
+      <Typography>Email: {profile.email}</Typography>
+      <Typography>Role: {profile.role}</Typography>
+      <Button
+        variant="contained"
+        color="error"
+        onClick={handleLogout}
+        className="auth-button"
+      >
+        Logout
+      </Button>
+    </div>
   );
 }

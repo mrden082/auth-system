@@ -1,12 +1,6 @@
 "use client";
 import { useForm } from "react-hook-form";
-import {
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Box,
-} from "@mui/material";
+import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
@@ -41,20 +35,11 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        mx: "auto",
-        mt: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Typography variant="h4" align="center" gutterBottom>
+    <div className="auth-container">
+      <Typography variant="h4" className="auth-title">
         Reset Password
       </Typography>
-      <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
         <TextField
           label="Email"
           fullWidth
@@ -87,7 +72,7 @@ export default function ResetPasswordPage() {
           helperText={errors.code?.message}
         />
         {error && (
-          <Typography color="error" align="center" sx={{ mt: 2 }}>
+          <Typography className="auth-error">
             {error.includes("400")
               ? "Invalid data. Check email, password, or code."
               : error.includes("500")
@@ -95,23 +80,19 @@ export default function ResetPasswordPage() {
               : error}
           </Typography>
         )}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading}
-            sx={{ width: "200px", height: "48px" }}
-          >
-            {loading ? <CircularProgress size={24} /> : "Reset Password"}
-          </Button>
-        </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          className="auth-button"
+        >
+          {loading ? <CircularProgress size={24} /> : "Reset Password"}
+        </Button>
       </form>
-      <Link href="/login">
-        <Typography align="center" sx={{ mt: 2 }}>
-          Back to Login
-        </Typography>
+      <Link href="/login" className="auth-link">
+        <Typography>Back to Login</Typography>
       </Link>
-    </Box>
+    </div>
   );
 }

@@ -1,5 +1,10 @@
-import "./globals.css";
-import ClientWrapper from "./ClientWrapper";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { AuthProvider } from "@/contexts/AuthContext";
+import theme from "@/utils/theme";
+import { Box } from "@mui/material";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import "../../styles/global.css";
 
 export const metadata = {
   title: "Auth System",
@@ -14,7 +19,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ClientWrapper>{children}</ClientWrapper>
+        <ThemeProvider theme={theme}>
+          <AuthProvider>
+            <CssBaseline />
+            <ErrorBoundary>
+              <Box className="client-wrapper">
+                <Box className="inner-wrapper">{children}</Box>
+              </Box>
+            </ErrorBoundary>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

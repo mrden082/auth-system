@@ -41,4 +41,6 @@ node_modules/
 .next/
 .env
 *.log
-.DS_Store
+.DS_Store\
+
+auth-system-backup.tar.gz

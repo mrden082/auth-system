@@ -1,12 +1,6 @@
 "use client";
 import { useForm } from "react-hook-form";
-import {
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Box,
-} from "@mui/material";
+import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,34 +32,29 @@ export default function RegisterPage() {
         "post",
         "/v1/identity/register",
         {
-          email: data.email,
+          email: data.email.trim(),
           name: data.name,
           surname: data.surname,
           password: data.password,
         }
       );
-      setToken(response.token);
-      router.push("/profile");
+      if (response && "token" in response) {
+        setToken(response.token);
+        router.push("/profile");
+      } else {
+        throw new Error("No token received from server");
+      }
     } catch (err) {
       console.error("Registration error:", err);
     }
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        mx: "auto",
-        mt: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Typography variant="h4" align="center" gutterBottom>
+    <div className="auth-container">
+      <Typography variant="h4" className="auth-title">
         Register
       </Typography>
-      <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
         <TextField
           label="Email"
           fullWidth
@@ -119,7 +108,7 @@ export default function RegisterPage() {
           helperText={errors.confirmPassword?.message}
         />
         {error && (
-          <Typography color="error" align="center" sx={{ mt: 2 }}>
+          <Typography className="auth-error">
             {error.includes("400")
               ? "Invalid request. Check form fields."
               : error.includes("500")
@@ -127,23 +116,19 @@ export default function RegisterPage() {
               : error}
           </Typography>
         )}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading}
-            sx={{ width: "200px", height: "48px" }}
-          >
-            {loading ? <CircularProgress size={24} /> : "Register"}
-          </Button>
-        </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          className="auth-button"
+        >
+          {loading ? <CircularProgress size={24} /> : "Register"}
+        </Button>
       </form>
-      <Link href="/login">
-        <Typography align="center" sx={{ mt: 2 }}>
-          Already have an account? Login
-        </Typography>
+      <Link href="/login" className="auth-link">
+        <Typography>Already have an account? Login</Typography>
       </Link>
-    </Box>
+    </div>
   );
 }

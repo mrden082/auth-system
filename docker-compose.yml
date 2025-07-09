@@ -1,13 +1,11 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.id.magiclab.space}
-    volumes:
-      - .:/app
-      - /app/node_modules
-    restart: unless-stopped
+     app:
+       build:
+         context: .
+         dockerfile: Dockerfile
+       ports:
+         - "3000:3000"
+       environment:
+         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.id.magiclab.space}
+       command: npm run start
+       restart: always

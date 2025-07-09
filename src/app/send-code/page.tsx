@@ -1,12 +1,6 @@
 "use client";
 import { useForm } from "react-hook-form";
-import {
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Box,
-} from "@mui/material";
+import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
@@ -28,7 +22,7 @@ export default function SendCodePage() {
   const onSubmit = async (data: SendCodeForm) => {
     try {
       await request("post", "/v1/identity/reset/send-code", {
-        email: data.email,
+        email: data.email.trim(),
       });
       router.push("/reset");
     } catch (err) {
@@ -37,20 +31,11 @@ export default function SendCodePage() {
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        mx: "auto",
-        mt: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Typography variant="h4" align="center" gutterBottom>
+    <div className="auth-container">
+      <Typography variant="h4" className="auth-title">
         Send Reset Code
       </Typography>
-      <form onSubmit={handleSubmit(onSubmit)} style={{ width: "100%" }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
         <TextField
           label="Email"
           fullWidth
@@ -63,9 +48,9 @@ export default function SendCodePage() {
           helperText={errors.email?.message}
         />
         {error && (
-          <Typography color="error" align="center" sx={{ mt: 2 }}>
+          <Typography className="auth-error">
             {error.includes("Unexpected end of JSON input")
-              ? "Invalid server response."
+              ? "Server response invalid. Please try again."
               : error.includes("404")
               ? "Endpoint not found."
               : error.includes("500")
@@ -73,23 +58,19 @@ export default function SendCodePage() {
               : error}
           </Typography>
         )}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading}
-            sx={{ width: "200px", height: "48px" }}
-          >
-            {loading ? <CircularProgress size={24} /> : "Send Code"}
-          </Button>
-        </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          className="auth-button"
+        >
+          {loading ? <CircularProgress size={24} /> : "Send Code"}
+        </Button>
       </form>
-      <Link href="/login">
-        <Typography align="center" sx={{ mt: 2 }}>
-          Back to Login
-        </Typography>
+      <Link href="/login" className="auth-link">
+        <Typography>Back to Login</Typography>
       </Link>
-    </Box>
+    </div>
   );
 }
