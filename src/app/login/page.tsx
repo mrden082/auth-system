@@ -1,16 +1,13 @@
 "use client";
 import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { loginUser } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { validateEmail } from "@/utils/validators";
-
-interface LoginForm {
-  email: string;
-  password: string;
-}
+import { LoginForm } from "@/contexts/types";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,29 +16,35 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>();
-  const { request, loading, error } = useApi();
   const { setToken } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [redirect, setRedirect] = useState(false);
 
   const onSubmit = async (data: LoginForm) => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await request<{ token: string }>(
-        "post",
-        "/v1/identity/login",
-        {
-          email: data.email.trim(),
-          password: data.password,
-        }
-      );
-      if (response && "token" in response) {
-        setToken(response.token);
-        router.push("/profile");
-      } else {
-        throw new Error("No token received from server");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
+      const response = await loginUser({
+        email: data.email.trim(),
+        password: data.password,
+      });
+      localStorage.setItem("access_token", response.token);
+      setToken(response.token);
+      setRedirect(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (redirect) {
+      router.refresh();
+      router.push("/profile");
+    }
+  }, [redirect, router]);
 
   return (
     <div className="auth-container">
@@ -75,13 +78,7 @@ export default function LoginPage() {
           error={!!errors.password}
           helperText={errors.password?.message}
         />
-        {error && (
-          <Typography className="auth-error">
-            {error.includes("400")
-              ? "Invalid email or password. Please check your credentials."
-              : error}
-          </Typography>
-        )}
+        {error && <Typography className="auth-error">{error}</Typography>}
         <Button
           type="submit"
           variant="contained"

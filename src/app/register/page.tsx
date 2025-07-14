@@ -1,19 +1,13 @@
 "use client";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { registerUser } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { validateEmail, validatePassword } from "@/utils/validators";
-
-interface RegisterForm {
-  email: string;
-  name: string;
-  surname: string;
-  password: string;
-  confirmPassword: string;
-}
+import { RegisterForm } from "@/contexts/types";
 
 export default function RegisterPage() {
   const {
@@ -22,30 +16,31 @@ export default function RegisterPage() {
     formState: { errors },
     getValues,
   } = useForm<RegisterForm>();
-  const { request, loading, error } = useApi();
   const { setToken } = useAuth();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (data: RegisterForm) => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await request<{ token: string }>(
-        "post",
-        "/v1/identity/register",
-        {
-          email: data.email.trim(),
-          name: data.name,
-          surname: data.surname,
-          password: data.password,
-        }
-      );
+      const response = await registerUser({
+        email: data.email.trim(),
+        name: data.name,
+        surname: data.surname,
+        password: data.password,
+      });
       if (response && "token" in response) {
         setToken(response.token);
         router.push("/profile");
       } else {
         throw new Error("No token received from server");
       }
-    } catch (err) {
-      console.error("Registration error:", err);
+    } catch (err: any) {
+      setError(err.message || "Invalid request");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,15 +102,7 @@ export default function RegisterPage() {
           error={!!errors.confirmPassword}
           helperText={errors.confirmPassword?.message}
         />
-        {error && (
-          <Typography className="auth-error">
-            {error.includes("400")
-              ? "Invalid request. Check form fields."
-              : error.includes("500")
-              ? "Server error, please try again later."
-              : error}
-          </Typography>
-        )}
+        {error && <Typography className="auth-error">{error}</Typography>}
         <Button
           type="submit"
           variant="contained"

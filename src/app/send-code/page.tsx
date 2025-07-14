@@ -1,14 +1,12 @@
 "use client";
 import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { sendResetCode } from "@/api/auth";
 import Link from "next/link";
 import { validateEmail } from "@/utils/validators";
-
-interface SendCodeForm {
-  email: string;
-}
+import { SendCodeForm } from "@/contexts/types";
 
 export default function SendCodePage() {
   const {
@@ -16,19 +14,29 @@ export default function SendCodePage() {
     handleSubmit,
     formState: { errors },
   } = useForm<SendCodeForm>();
-  const { request, loading, error } = useApi();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [redirect, setRedirect] = useState(false);
 
   const onSubmit = async (data: SendCodeForm) => {
+    setLoading(true);
+    setError(null);
     try {
-      await request("post", "/v1/identity/reset/send-code", {
-        email: data.email.trim(),
-      });
-      router.push("/reset");
-    } catch (err) {
-      console.error("Send code error:", err);
+      await sendResetCode(data.email.trim());
+      setRedirect(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to send reset code");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (redirect) {
+      setTimeout(() => router.push("/reset"), 0);
+    }
+  }, [redirect, router]);
 
   return (
     <div className="auth-container">
@@ -47,17 +55,7 @@ export default function SendCodePage() {
           error={!!errors.email}
           helperText={errors.email?.message}
         />
-        {error && (
-          <Typography className="auth-error">
-            {error.includes("Unexpected end of JSON input")
-              ? "Server response invalid. Please try again."
-              : error.includes("404")
-              ? "Endpoint not found."
-              : error.includes("500")
-              ? "Server error, please try again later."
-              : error}
-          </Typography>
-        )}
+        {error && <Typography className="auth-error">{error}</Typography>}
         <Button
           type="submit"
           variant="contained"

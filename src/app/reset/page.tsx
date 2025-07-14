@@ -1,36 +1,42 @@
 "use client";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { TextField, Button, Typography, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApi } from "@/hooks/useApi";
+import { resetPassword } from "@/api/auth";
 import Link from "next/link";
 import { validateEmail, validatePassword } from "@/utils/validators";
+import { ResetForm } from "@/contexts/types";
 
-interface ResetForm {
+interface FormData extends ResetForm {
   email: string;
-  password: string;
-  code: string;
 }
 
-export default function ResetPasswordPage() {
+export default function ResetPage() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ResetForm>();
-  const { request, loading, error } = useApi();
+    getValues,
+  } = useForm<FormData>();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: ResetForm) => {
+  const onSubmit = async (data: FormData) => {
+    setLoading(true);
+    setError(null);
     try {
-      await request("post", "/v1/identity/reset", {
-        email: data.email,
+      await resetPassword({
+        email: data.email.trim(),
+        code: data.code.trim(),
         password: data.password,
-        code: data.code,
       });
       router.push("/login");
-    } catch (err) {
-      console.error("Reset password error:", err);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to reset password");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,6 +58,17 @@ export default function ResetPasswordPage() {
           helperText={errors.email?.message}
         />
         <TextField
+          label="Reset Code"
+          fullWidth
+          margin="normal"
+          {...register("code", {
+            required: "Reset code is required",
+            pattern: { value: /^[0-9]{6}$/, message: "Code must be 6 digits" },
+          })}
+          error={!!errors.code}
+          helperText={errors.code?.message}
+        />
+        <TextField
           label="New Password"
           type="password"
           fullWidth
@@ -59,27 +76,28 @@ export default function ResetPasswordPage() {
           {...register("password", {
             required: "Password is required",
             validate: validatePassword,
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters",
+            },
           })}
           error={!!errors.password}
           helperText={errors.password?.message}
         />
         <TextField
-          label="Reset Code"
+          label="Confirm Password"
+          type="password"
           fullWidth
           margin="normal"
-          {...register("code", { required: "Reset code is required" })}
-          error={!!errors.code}
-          helperText={errors.code?.message}
+          {...register("confirmPassword", {
+            required: "Confirm password is required",
+            validate: (value) =>
+              value === getValues("password") || "Passwords do not match",
+          })}
+          error={!!errors.confirmPassword}
+          helperText={errors.confirmPassword?.message}
         />
-        {error && (
-          <Typography className="auth-error">
-            {error.includes("400")
-              ? "Invalid data. Check email, password, or code."
-              : error.includes("500")
-              ? "Server error, please try again later."
-              : error}
-          </Typography>
-        )}
+        {error && <Typography className="auth-error">{error}</Typography>}
         <Button
           type="submit"
           variant="contained"
